@@ -1,11 +1,6 @@
 name: Send LIC daily countdown
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/lic-daily.yml
   schedule:
     - cron: "30 11 20-30 9 *"
     - cron: "30 11 1-22 10 *"
@@ -42,19 +37,12 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_MODE: ${{ inputs.mode }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           today="$(TZ=America/Chicago date +%F)"
           mode="live"
 
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            if [[ "$COMMIT_MESSAGE" != "Send Day 3 recovery" ]]; then
-              echo "Unapproved push trigger."
-              exit 1
-            fi
-            mode="live"
-          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_MODE" == "dry-run" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_MODE" == "dry-run" ]]; then
             mode="dry-run"
           elif [[ "$today" < "2026-09-20" || "$today" > "2026-10-22" ]]; then
             echo "Outside the LIC 2026 delivery window; nothing to do."
