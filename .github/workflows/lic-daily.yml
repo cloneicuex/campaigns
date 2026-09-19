@@ -71,6 +71,24 @@ jobs:
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
 
+      - name: Inspect approved identity claims
+        if: steps.mode.outputs.skip != 'true'
+        shell: bash
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+
+          payload = os.environ["OIDC_TOKEN"].split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+          allowed = ["iss", "aud", "repository", "ref", "event_name", "workflow_ref", "sub", "iat", "nbf", "exp"]
+          print(json.dumps({key: claims.get(key) for key in allowed}, indent=2))
+          PY
+
       - name: Run campaign
         if: steps.mode.outputs.skip != 'true'
         shell: bash
